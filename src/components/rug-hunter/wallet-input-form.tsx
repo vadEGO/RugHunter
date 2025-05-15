@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,8 +38,8 @@ export function WalletInputForm({ addWalletAction }: WalletInputFormProps) {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    const result = addWalletAction(values.address);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const result = await addWalletAction(values.address);
     if (result.success) {
       toast({
         title: "Success",

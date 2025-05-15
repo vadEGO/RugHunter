@@ -1,47 +1,51 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-
-const RUGGED_WALLETS_KEY = 'ruggedWalletsList';
+import { getWalletsServerAction, addWalletServerAction } from '@/actions/wallet-actions';
 
 export function useRuggedWallets() {
   const [wallets, setWallets] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const storedWallets = localStorage.getItem(RUGGED_WALLETS_KEY);
-      if (storedWallets) {
-        setWallets(JSON.parse(storedWallets));
+    const loadWallets = async () => {
+      setIsLoaded(false);
+      try {
+        const serverWallets = await getWalletsServerAction();
+        setWallets(serverWallets);
+      } catch (error) {
+        console.error("Failed to load wallets from server:", error);
+        setWallets([]); // Fallback to empty list on error
       }
-    } catch (error) {
-      console.error("Failed to load wallets from localStorage:", error);
-      // Initialize with empty array if parsing fails or localStorage is unavailable
-      setWallets([]);
-    }
-    setIsLoaded(true);
+      setIsLoaded(true);
+    };
+    loadWallets();
   }, []);
 
-  useEffect(() => {
-    if (isLoaded) {
-      try {
-        localStorage.setItem(RUGGED_WALLETS_KEY, JSON.stringify(wallets));
-      } catch (error) {
-        console.error("Failed to save wallets to localStorage:", error);
-      }
-    }
-  }, [wallets, isLoaded]);
-
-  const addWallet = useCallback((address: string): { success: boolean; message: string } => {
+  const addWallet = useCallback(async (address: string): Promise<{ success: boolean; message: string }> => {
     if (!address || address.trim() === "") {
       return { success: false, message: "Address cannot be empty." };
     }
     const normalizedAddress = address.trim().toLowerCase();
+    
+    // Client-side check (optional, but good for UX before server call)
     if (wallets.map(w => w.toLowerCase()).includes(normalizedAddress)) {
       return { success: false, message: "Address already in the list." };
     }
-    setWallets(prevWallets => [...prevWallets, normalizedAddress]);
-    return { success: true, message: "Address added to rugged list." };
+
+    try {
+      const result = await addWalletServerAction(normalizedAddress);
+      if (result.success && result.updatedWallets) {
+        setWallets(result.updatedWallets);
+        return { success: true, message: result.message || "Address added to rugged list." };
+      } else {
+        return { success: false, message: result.message || "Failed to add address." };
+      }
+    } catch (error) {
+      console.error("Error calling addWalletServerAction:", error);
+      return { success: false, message: "An error occurred while adding the address." };
+    }
   }, [wallets]);
 
   const isWalletRugged = useCallback((address: string): boolean => {
