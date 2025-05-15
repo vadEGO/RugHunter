@@ -1,0 +1,82 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { useRuggedWallets } from "@/hooks/use-rugged-wallets";
+import type { StatusDisplayType } from "./status-indicator";
+import { Search } from "lucide-react";
+
+const formSchema = z.object({
+  address: z.string().min(1, "Wallet address cannot be empty."),
+});
+
+type WalletSearchFormProps = {
+  isWalletRuggedAction: ReturnType<typeof useRuggedWallets>['isWalletRugged'];
+  setSearchResult: (result: { status: StatusDisplayType; address?: string; message?: string }) => void;
+};
+
+export function WalletSearchForm({ isWalletRuggedAction, setSearchResult }: WalletSearchFormProps) {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      address: "",
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    setSearchResult({ status: 'checking', address: values.address });
+    // Simulate network delay for checking status
+    setTimeout(() => {
+      const isRugged = isWalletRuggedAction(values.address);
+      if (isRugged) {
+        setSearchResult({ status: 'rugged', address: values.address });
+      } else {
+        setSearchResult({ status: 'safe', address: values.address });
+      }
+      form.reset(); // Optionally reset form after search
+    }, 500);
+  }
+
+  return (
+    <Card className="w-full shadow-xl">
+      <CardHeader>
+        <CardTitle className="text-2xl">Check Wallet</CardTitle>
+        <CardDescription>Enter a wallet address to check its status.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Wallet Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter wallet address to check (e.g., 0x...)" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full">
+              <Search className="mr-2 h-5 w-5" /> Check Address
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
