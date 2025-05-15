@@ -18,6 +18,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { useRuggedWallets } from "@/hooks/use-rugged-wallets";
 import type { StatusDisplayType } from "./status-indicator";
 import { Search } from "lucide-react";
+import { addGoodWalletServerAction } from "@/actions/wallet-actions"; // Import new action
+import { useToast } from "@/hooks/use-toast";
+
 
 const formSchema = z.object({
   address: z.string()
@@ -31,6 +34,7 @@ type WalletSearchFormProps = {
 };
 
 export function WalletSearchForm({ isWalletRuggedAction, setSearchResult }: WalletSearchFormProps) {
+  const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -38,25 +42,37 @@ export function WalletSearchForm({ isWalletRuggedAction, setSearchResult }: Wall
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setSearchResult({ status: 'checking', address: values.address });
-    // Simulate network delay for checking status
-    setTimeout(() => {
-      const isRugged = isWalletRuggedAction(values.address);
-      if (isRugged) {
-        setSearchResult({ status: 'rugged', address: values.address });
+    
+    // Simulate a slight delay if needed, or remove if isWalletRuggedAction is fast enough
+    // For real async operations, this timeout structure would change.
+    // await new Promise(resolve => setTimeout(resolve, 500)); 
+
+    const isRugged = isWalletRuggedAction(values.address);
+    if (isRugged) {
+      setSearchResult({ status: 'rugged', address: values.address });
+    } else {
+      // If not rugged, it's safe. Try to add to good wallets list.
+      const addGoodResult = await addGoodWalletServerAction(values.address);
+      if (addGoodResult.success) {
+        setSearchResult({ status: 'safe', address: values.address, message: "Address appears safe and has been noted." });
+        // Optionally, provide a toast for successful addition to good list if desired
+        // toast({ title: "Wallet Noted", description: "This address has been added to your list of good wallets." });
       } else {
-        setSearchResult({ status: 'safe', address: values.address });
+        // Still safe, but couldn't update good list.
+        setSearchResult({ status: 'safe', address: values.address, message: "Address appears safe. (Could not update internal 'good' list)" });
+        toast({ title: "Info", description: addGoodResult.message || "Could not update internal 'good' list.", variant: "default" });
       }
-      form.reset(); // Optionally reset form after search
-    }, 500);
+    }
+    // form.reset(); // Optionally reset form after search - keep it for now.
   }
 
   return (
     <Card className="w-full shadow-xl">
       <CardHeader>
         <CardTitle className="text-2xl">Check Solana Wallet</CardTitle>
-        <CardDescription>Enter a Solana wallet address to check its status.</CardDescription>
+        <CardDescription>Enter a Solana wallet address to check its status. Safe addresses will be noted.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
