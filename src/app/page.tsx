@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -5,11 +6,14 @@ import { WalletInputForm } from '@/components/rug-hunter/wallet-input-form';
 import { WalletSearchForm } from '@/components/rug-hunter/wallet-search-form';
 import { StatusIndicator, type StatusDisplayType } from '@/components/rug-hunter/status-indicator';
 import { useRuggedWallets } from '@/hooks/use-rugged-wallets';
-import { Separator } from '@/components/ui/separator';
-import { Github, ShieldCheck } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Github, ShieldCheck, Search, ListChecks, Loader2, PlusCircle } from 'lucide-react';
 
 export default function RugHunterPage() {
-  const { addWallet, isWalletRugged, isLoaded } = useRuggedWallets();
+  const { wallets, addWallet, isWalletRugged, isLoaded } = useRuggedWallets();
   const [searchResult, setSearchResult] = useState<{ status: StatusDisplayType; address?: string; message?: string }>({
     status: 'idle',
   });
@@ -28,22 +32,77 @@ export default function RugHunterPage() {
         </p>
       </header>
 
-      <main className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-        <div className="space-y-8">
-          <WalletSearchForm 
-            isWalletRuggedAction={isWalletRugged} 
-            setSearchResult={setSearchResult} 
-          />
-          {isLoaded && <StatusIndicator {...searchResult} />}
-          {!isLoaded && (
-             <div className="mt-6 p-6 bg-card rounded-lg shadow-md flex flex-col items-center text-center">
-                <ShieldCheck className={`h-12 w-12 mb-3 text-muted-foreground`} />
-                <p className={`text-lg font-semibold text-muted-foreground`}>Loading wallet data...</p>
+      <main className="w-full max-w-4xl">
+        <Tabs defaultValue="hunter-tools" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8 shadow-sm">
+            <TabsTrigger value="hunter-tools">
+              <Search className="mr-2 h-4 w-4" />
+              Hunter Tools
+            </TabsTrigger>
+            <TabsTrigger value="rugged-list">
+              <ListChecks className="mr-2 h-4 w-4" />
+              Rugged Wallets ({wallets.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="hunter-tools">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+              <div className="space-y-8">
+                <WalletSearchForm 
+                  isWalletRuggedAction={isWalletRugged} 
+                  setSearchResult={setSearchResult} 
+                />
+                {isLoaded && <StatusIndicator {...searchResult} />}
+                {!isLoaded && (
+                  <div className="mt-6 p-6 bg-card rounded-lg shadow-md flex flex-col items-center text-center">
+                      <ShieldCheck className={`h-12 w-12 mb-3 text-muted-foreground`} />
+                      <p className={`text-lg font-semibold text-muted-foreground`}>Loading wallet data...</p>
+                  </div>
+                )}
+              </div>
+              
+              <WalletInputForm addWalletAction={addWallet} />
             </div>
-          )}
-        </div>
-        
-        <WalletInputForm addWalletAction={addWallet} />
+          </TabsContent>
+
+          <TabsContent value="rugged-list">
+            <Card className="w-full shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-2xl">Known Rugged Wallet Addresses</CardTitle>
+                <CardDescription>This list contains addresses that have been reported as scams and added via the Hunter Tools.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!isLoaded && (
+                  <div className="flex items-center justify-center p-10">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                    <p className="ml-3 text-lg text-muted-foreground">Loading wallet list...</p>
+                  </div>
+                )}
+                {isLoaded && wallets.length === 0 && (
+                  <p className="text-muted-foreground text-center p-10 text-lg">
+                    No rugged wallets have been added yet. Use the <PlusCircle className="inline h-5 w-5 relative -top-px mx-1" /> "Add Rugged Wallet" tool.
+                  </p>
+                )}
+                {isLoaded && wallets.length > 0 && (
+                  <ScrollArea className="h-[400px] pr-4 border rounded-md p-4">
+                    <div className="space-y-2">
+                      {wallets.map((wallet, index) => (
+                        <Badge 
+                          key={index} 
+                          variant="destructive" 
+                          className="w-full text-left block truncate p-2.5 text-sm font-mono shadow-sm"
+                          title={wallet} // Show full wallet on hover
+                        >
+                          {wallet}
+                        </Badge>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
 
       <footer className="mt-16 text-center text-muted-foreground text-sm">
