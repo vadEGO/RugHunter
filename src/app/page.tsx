@@ -10,13 +10,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Github, ShieldCheck, Search, ListChecks, Loader2, PlusCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Github, ShieldCheck, Search, ListChecks, Loader2, PlusCircle, Download } from 'lucide-react';
 
 export default function RugHunterPage() {
   const { wallets, addWallet, isWalletRugged, isLoaded } = useRuggedWallets();
   const [searchResult, setSearchResult] = useState<{ status: StatusDisplayType; address?: string; message?: string }>({
     status: 'idle',
   });
+
+  const handleDownloadCSV = () => {
+    if (wallets.length === 0) return;
+
+    const csvHeader = "Wallet Address\n";
+    const csvRows = wallets.map(wallet => `"${wallet}"`).join("\n");
+    const csvContent = csvHeader + csvRows;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "rugged_wallets.csv");
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 bg-background">
@@ -68,7 +89,17 @@ export default function RugHunterPage() {
           <TabsContent value="rugged-list">
             <Card className="w-full shadow-xl">
               <CardHeader>
-                <CardTitle className="text-2xl">Known Rugged Wallet Addresses</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-2xl">Known Rugged Wallet Addresses</CardTitle>
+                  <Button 
+                    onClick={handleDownloadCSV} 
+                    disabled={wallets.length === 0 || !isLoaded}
+                    variant="outline"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download CSV
+                  </Button>
+                </div>
                 <CardDescription>This list contains addresses that have been reported as scams and added via the Hunter Tools.</CardDescription>
               </CardHeader>
               <CardContent>
