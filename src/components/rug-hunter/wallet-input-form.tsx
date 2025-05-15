@@ -20,9 +20,9 @@ import type { useRuggedWallets } from "@/hooks/use-rugged-wallets";
 import { PlusCircle } from "lucide-react";
 
 const formSchema = z.object({
-  address: z.string().min(1, "Wallet address cannot be empty."),
-  // Add more specific regex validation for wallet addresses if needed, e.g.
-  // address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address format."),
+  address: z.string()
+    .min(1, "Solana address cannot be empty.")
+    .regex(/^[1-9A-HJ-NP-Za-km-z]{43,44}$/, "Invalid Solana address format. Must be 43-44 Base58 characters."),
 });
 
 type WalletInputFormProps = {
@@ -58,8 +58,8 @@ export function WalletInputForm({ addWalletAction }: WalletInputFormProps) {
   return (
     <Card className="w-full shadow-xl">
       <CardHeader>
-        <CardTitle className="text-2xl">Add Rugged Wallet</CardTitle>
-        <CardDescription>Enter a wallet address to add to the scam list.</CardDescription>
+        <CardTitle className="text-2xl">Add Rugged Solana Wallet</CardTitle>
+        <CardDescription>Enter a Solana wallet address to add to the scam list.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -69,9 +69,9 @@ export function WalletInputForm({ addWalletAction }: WalletInputFormProps) {
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Wallet Address</FormLabel>
+                  <FormLabel>Solana Wallet Address</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter wallet address (e.g., 0x...)" {...field} />
+                    <Input placeholder="Enter Solana address (e.g., SoLAnAd...)" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

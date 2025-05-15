@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +20,9 @@ import type { StatusDisplayType } from "./status-indicator";
 import { Search } from "lucide-react";
 
 const formSchema = z.object({
-  address: z.string().min(1, "Wallet address cannot be empty."),
+  address: z.string()
+    .min(1, "Solana address cannot be empty.")
+    .regex(/^[1-9A-HJ-NP-Za-km-z]{43,44}$/, "Invalid Solana address format. Must be 43-44 Base58 characters."),
 });
 
 type WalletSearchFormProps = {
@@ -52,8 +55,8 @@ export function WalletSearchForm({ isWalletRuggedAction, setSearchResult }: Wall
   return (
     <Card className="w-full shadow-xl">
       <CardHeader>
-        <CardTitle className="text-2xl">Check Wallet</CardTitle>
-        <CardDescription>Enter a wallet address to check its status.</CardDescription>
+        <CardTitle className="text-2xl">Check Solana Wallet</CardTitle>
+        <CardDescription>Enter a Solana wallet address to check its status.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -63,9 +66,9 @@ export function WalletSearchForm({ isWalletRuggedAction, setSearchResult }: Wall
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Wallet Address</FormLabel>
+                  <FormLabel>Solana Wallet Address</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter wallet address to check (e.g., 0x...)" {...field} />
+                    <Input placeholder="Enter Solana wallet address to check (e.g., SoLAnAd...)" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

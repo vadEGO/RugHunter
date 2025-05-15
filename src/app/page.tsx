@@ -22,7 +22,7 @@ export default function RugHunterPage() {
   const handleDownloadCSV = () => {
     if (wallets.length === 0) return;
 
-    const csvHeader = "Wallet Address\n";
+    const csvHeader = "Solana Wallet Address\n"; // Updated CSV Header
     const csvRows = wallets.map(wallet => `"${wallet}"`).join("\n");
     const csvContent = csvHeader + csvRows;
 
@@ -31,7 +31,7 @@ export default function RugHunterPage() {
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
-      link.setAttribute("download", "rugged_wallets.csv");
+      link.setAttribute("download", "rugged_solana_wallets.csv"); // Updated filename
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -49,7 +49,7 @@ export default function RugHunterPage() {
           <h1 className="text-5xl font-bold text-primary">Rug Hunter</h1>
         </div>
         <p className="text-lg text-muted-foreground">
-          Identify and track scammer crypto wallets. Stay safe in the DeFi space.
+          Identify and track scammer Solana crypto wallets. Stay safe in the Solana DeFi space.
         </p>
       </header>
 
@@ -62,16 +62,16 @@ export default function RugHunterPage() {
             </TabsTrigger>
             <TabsTrigger value="rugged-list">
               <ListChecks className="mr-2 h-4 w-4" />
-              Rugged Wallets ({wallets.length})
+              Rugged Solana Wallets ({wallets.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="hunter-tools">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
               <div className="space-y-8">
-                <WalletSearchForm 
-                  isWalletRuggedAction={isWalletRugged} 
-                  setSearchResult={setSearchResult} 
+                <WalletSearchForm
+                  isWalletRuggedAction={isWalletRugged}
+                  setSearchResult={setSearchResult}
                 />
                 {isLoaded && <StatusIndicator {...searchResult} />}
                 {!isLoaded && (
@@ -81,7 +81,7 @@ export default function RugHunterPage() {
                   </div>
                 )}
               </div>
-              
+
               <WalletInputForm addWalletAction={addWallet} />
             </div>
           </TabsContent>
@@ -90,9 +90,9 @@ export default function RugHunterPage() {
             <Card className="w-full shadow-xl">
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <CardTitle className="text-2xl">Known Rugged Wallet Addresses</CardTitle>
-                  <Button 
-                    onClick={handleDownloadCSV} 
+                  <CardTitle className="text-2xl">Known Rugged Solana Wallet Addresses</CardTitle>
+                  <Button
+                    onClick={handleDownloadCSV}
                     disabled={wallets.length === 0 || !isLoaded}
                     variant="outline"
                   >
@@ -100,7 +100,7 @@ export default function RugHunterPage() {
                     Download CSV
                   </Button>
                 </div>
-                <CardDescription>This list contains addresses that have been reported as scams and added via the Hunter Tools.</CardDescription>
+                <CardDescription>This list contains Solana addresses that have been reported as scams and added via the Hunter Tools.</CardDescription>
               </CardHeader>
               <CardContent>
                 {!isLoaded && (
@@ -111,16 +111,16 @@ export default function RugHunterPage() {
                 )}
                 {isLoaded && wallets.length === 0 && (
                   <p className="text-muted-foreground text-center p-10 text-lg">
-                    No rugged wallets have been added yet. Use the <PlusCircle className="inline h-5 w-5 relative -top-px mx-1" /> "Add Rugged Wallet" tool.
+                    No rugged Solana wallets have been added yet. Use the <PlusCircle className="inline h-5 w-5 relative -top-px mx-1" /> "Add Rugged Solana Wallet" tool.
                   </p>
                 )}
                 {isLoaded && wallets.length > 0 && (
                   <ScrollArea className="h-[400px] pr-4 border rounded-md p-4">
                     <div className="space-y-2">
                       {wallets.map((wallet, index) => (
-                        <Badge 
-                          key={index} 
-                          variant="destructive" 
+                        <Badge
+                          key={index}
+                          variant="destructive"
                           className="w-full text-left block truncate p-2.5 text-sm font-mono shadow-sm"
                           title={wallet} // Show full wallet on hover
                         >
@@ -138,10 +138,10 @@ export default function RugHunterPage() {
 
       <footer className="mt-16 text-center text-muted-foreground text-sm">
         <p>&copy; {new Date().getFullYear()} Rug Hunter. All rights reserved.</p>
-        <a 
-          href="https://github.com/your-github-repo" // Replace with actual link
-          target="_blank" 
-          rel="noopener noreferrer" 
+        <a
+          href="https://github.com/vadEGO/RugHunter"
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center hover:text-primary transition-colors mt-2"
         >
           <Github className="h-4 w-4 mr-1" />
