@@ -69,9 +69,9 @@ export default function RugHunterPage() {
           <TabsContent value="hunter-tools">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
               <div className="space-y-8">
-                <WalletSearchForm 
-                  isWalletRuggedAction={isWalletRugged} 
-                  setSearchResult={setSearchResult} 
+                <WalletSearchForm
+                  isWalletRuggedAction={isWalletRugged}
+                  setSearchResult={setSearchResult}
                 />
                 {isLoaded && <StatusIndicator {...searchResult} />}
                 {!isLoaded && (
@@ -81,7 +81,7 @@ export default function RugHunterPage() {
                   </div>
                 )}
               </div>
-              
+
               <WalletInputForm addWalletAction={addWallet} />
             </div>
           </TabsContent>
@@ -91,8 +91,8 @@ export default function RugHunterPage() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-2xl">Known Rugged Wallet Addresses</CardTitle>
-                  <Button 
-                    onClick={handleDownloadCSV} 
+                  <Button
+                    onClick={handleDownloadCSV}
                     disabled={wallets.length === 0 || !isLoaded}
                     variant="outline"
                   >
@@ -118,9 +118,9 @@ export default function RugHunterPage() {
                   <ScrollArea className="h-[400px] pr-4 border rounded-md p-4">
                     <div className="space-y-2">
                       {wallets.map((wallet, index) => (
-                        <Badge 
-                          key={index} 
-                          variant="destructive" 
+                        <Badge
+                          key={index}
+                          variant="destructive"
                           className="w-full text-left block truncate p-2.5 text-sm font-mono shadow-sm"
                           title={wallet} // Show full wallet on hover
                         >
@@ -138,10 +138,10 @@ export default function RugHunterPage() {
 
       <footer className="mt-16 text-center text-muted-foreground text-sm">
         <p>&copy; {new Date().getFullYear()} Rug Hunter. All rights reserved.</p>
-        <a 
-          href="https://github.com/your-github-repo" // Replace with actual link
-          target="_blank" 
-          rel="noopener noreferrer" 
+        <a
+          href="https://github.com/vadEGO/RugHunter"
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center hover:text-primary transition-colors mt-2"
         >
           <Github className="h-4 w-4 mr-1" />
