@@ -11,8 +11,37 @@ const projectRoot = process.cwd();
 const dataDir = path.join(projectRoot, 'data');
 const walletsFilePath = path.join(dataDir, 'rugged-wallets.json');
 
+async function performDiagnosticLogging() {
+  if (process.env.VERCEL) { // Only run diagnostics on Vercel for clarity
+    console.log(`[RugHunter Diagnostic] Current working directory (projectRoot): ${projectRoot}`);
+    console.log(`[RugHunter Diagnostic] Constructed dataDir: ${dataDir}`);
+    console.log(`[RugHunter Diagnostic] Constructed walletsFilePath: ${walletsFilePath}`);
+    try {
+      console.log(`[RugHunter Diagnostic] Listing contents of /var/task (projectRoot):`);
+      const rootContents = await fs.readdir(projectRoot);
+      console.log(`[RugHunter Diagnostic] /var/task contents: ${rootContents.join(', ')}`);
+
+      try {
+        console.log(`[RugHunter Diagnostic] Listing contents of ${dataDir}:`);
+        const dataDirContents = await fs.readdir(dataDir);
+        console.log(`[RugHunter Diagnostic] ${dataDir} contents: ${dataDirContents.join(', ')}`);
+      } catch (e: any) {
+        if (e.code === 'ENOENT') {
+          console.warn(`[RugHunter Diagnostic] Directory ${dataDir} NOT FOUND.`);
+        } else {
+          console.warn(`[RugHunter Diagnostic] Could not list contents of ${dataDir}: ${e.message}`);
+        }
+      }
+    } catch (e: any) {
+      console.warn(`[RugHunter Diagnostic] Could not list contents of ${projectRoot}: ${e.message}`);
+    }
+  }
+}
+
 export async function getWalletsServerAction(): Promise<string[]> {
-  console.log(`[RugHunter] getWalletsServerAction: Attempting to read from ${walletsFilePath}. Current working directory: ${projectRoot}`);
+  await performDiagnosticLogging(); // Add diagnostic logging
+
+  console.log(`[RugHunter] getWalletsServerAction: Attempting to read from ${walletsFilePath}.`);
   try {
     const data = await fs.readFile(walletsFilePath, 'utf-8');
     console.log(`[RugHunter] getWalletsServerAction: Successfully read file. Parsing JSON.`);
@@ -24,7 +53,8 @@ export async function getWalletsServerAction(): Promise<string[]> {
       console.warn(
         `[RugHunter] getWalletsServerAction: Wallets data file ('${walletsFilePath}') NOT FOUND. ` +
         `This is expected if the file has not been created yet or, crucially on Vercel, is NOT INCLUDED IN THE DEPLOYMENT BUNDLE. ` +
-        `ACTION REQUIRED: Ensure 'data/rugged-wallets.json' is committed to your repository with initial content (e.g., '[]'). ` +
+        `ACTION REQUIRED: Ensure 'data/rugged-wallets.json' is committed to your repository with initial content (e.g., '[]') AND ` +
+        `that 'next.config.ts' correctly includes it via 'outputFileTracingIncludes'. ` +
         `Returning an empty list.`
       );
       return [];
@@ -36,7 +66,7 @@ export async function getWalletsServerAction(): Promise<string[]> {
 }
 
 export async function addWalletServerAction(address: string): Promise<{ success: boolean; message: string; updatedWallets?: string[] }> {
-  console.log(`[RugHunter] addWalletServerAction: Adding address '${address}'. Reading existing wallets from ${walletsFilePath}. Current working directory: ${projectRoot}`);
+  console.log(`[RugHunter] addWalletServerAction: Adding address '${address}'. Reading existing wallets from ${walletsFilePath}.`);
   let currentWallets: string[] = [];
   try {
     const data = await fs.readFile(walletsFilePath, 'utf-8');
@@ -47,7 +77,7 @@ export async function addWalletServerAction(address: string): Promise<{ success:
       console.log(
         `[RugHunter] addWalletServerAction: Wallets data file ('${walletsFilePath}') NOT FOUND during read for add operation. ` +
         `Will proceed assuming an empty list for this session. ` +
-        `Remember, on Vercel, the file system is ephemeral; writes won't persist a new file if it wasn't in the bundle.`
+        `Remember, on Vercel, the file system is ephemeral; writes won't persist a new file if it wasn't in the bundle, and the original bundle file (if any) will be read next time.`
       );
       // currentWallets remains []
     } else {
@@ -69,7 +99,7 @@ export async function addWalletServerAction(address: string): Promise<{ success:
   if (isOnVercel) {
     console.warn(
       `[RugHunter] addWalletServerAction: Running on Vercel. File system writes to ${walletsFilePath} are ephemeral and will NOT persist across deployments or different serverless function invocations. ` +
-      `The operation will update client-side state for this session only.`
+      `The operation will update client-side state for this session only. The file system is read-only or ephemeral for user data.`
     );
     // On Vercel, we return success optimistically for the in-memory update.
     // The change won't persist in the file for subsequent fresh reads from a new function instance.
@@ -84,7 +114,6 @@ export async function addWalletServerAction(address: string): Promise<{ success:
   try {
     console.log(`[RugHunter] addWalletServerAction: (Non-Vercel Environment) Attempting to write updated wallets to: ${walletsFilePath}.`);
     // Ensure 'data' directory exists. This is mainly for local dev convenience.
-    // On Vercel, if 'data' dir wasn't in bundle, this might fail or be irrelevant if writeFile fails.
     await fs.mkdir(dataDir, { recursive: true });
     await fs.writeFile(walletsFilePath, JSON.stringify(currentWallets, null, 2), 'utf-8');
     
