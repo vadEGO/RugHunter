@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
       // (which are the server-side parts of your App Router pages/components),
       // also include the './data/rugged-wallets.json' file from the project root."
       // This should copy data/rugged-wallets.json to /var/task/data/rugged-wallets.json
-      'app/**/*.js': ['./data/rugged-wallets.json'],
+      '/data': ['./data/rugged-wallets.json'],
     },
   },
 };
