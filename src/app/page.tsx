@@ -5,13 +5,14 @@ import { useState } from 'react';
 import { WalletInputForm } from '@/components/rug-hunter/wallet-input-form';
 import { WalletSearchForm } from '@/components/rug-hunter/wallet-search-form';
 import { StatusIndicator, type StatusDisplayType } from '@/components/rug-hunter/status-indicator';
+import { TokenAuthorityChecker } from '@/components/rug-hunter/token-authority-checker'; // New import
 import { useRuggedWallets } from '@/hooks/use-rugged-wallets';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Github, ShieldCheck, Search, ListChecks, Loader2, PlusCircle, Download } from 'lucide-react';
+import { Github, ShieldCheck, Search, ListChecks, Loader2, PlusCircle, Download, KeyRound } from 'lucide-react'; // Added KeyRound
 
 export default function RugHunterPage() {
   const { wallets, addWallet, isWalletRugged, isLoaded } = useRuggedWallets();
@@ -22,7 +23,7 @@ export default function RugHunterPage() {
   const handleDownloadCSV = () => {
     if (wallets.length === 0) return;
 
-    const csvHeader = "Solana Wallet Address\n"; // Updated CSV Header
+    const csvHeader = "Solana Wallet Address\n";
     const csvRows = wallets.map(wallet => `"${wallet}"`).join("\n");
     const csvContent = csvHeader + csvRows;
 
@@ -31,7 +32,7 @@ export default function RugHunterPage() {
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
-      link.setAttribute("download", "rugged_solana_wallets.csv"); // Updated filename
+      link.setAttribute("download", "rugged_solana_wallets.csv");
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -49,20 +50,24 @@ export default function RugHunterPage() {
           <h1 className="text-5xl font-bold text-primary">Rug Hunter</h1>
         </div>
         <p className="text-lg text-muted-foreground">
-          Identify and track scammer Solana crypto wallets. Stay safe in the Solana DeFi space.
+          Identify and track scammer Solana crypto wallets. Check token authorities. Stay safe in the Solana DeFi space.
         </p>
       </header>
 
       <main className="w-full max-w-4xl">
         <Tabs defaultValue="hunter-tools" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 shadow-sm">
+          <TabsList className="grid w-full grid-cols-3 mb-8 shadow-sm"> {/* Updated grid-cols-3 */}
             <TabsTrigger value="hunter-tools">
               <Search className="mr-2 h-4 w-4" />
-              Hunter Tools
+              Wallet Hunter
+            </TabsTrigger>
+            <TabsTrigger value="token-authority"> {/* New Tab Trigger */}
+              <KeyRound className="mr-2 h-4 w-4" />
+              Token Authority
             </TabsTrigger>
             <TabsTrigger value="rugged-list">
               <ListChecks className="mr-2 h-4 w-4" />
-              Rugged Solana Wallets ({wallets.length})
+              Rugged List ({wallets.length})
             </TabsTrigger>
           </TabsList>
 
@@ -81,9 +86,12 @@ export default function RugHunterPage() {
                   </div>
                 )}
               </div>
-
               <WalletInputForm addWalletAction={addWallet} />
             </div>
+          </TabsContent>
+
+          <TabsContent value="token-authority"> {/* New Tab Content */}
+            <TokenAuthorityChecker />
           </TabsContent>
 
           <TabsContent value="rugged-list">
