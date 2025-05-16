@@ -21,10 +21,9 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     outputFileTracingIncludes: {
-
       'app/**/*.js': [
         './data/rugged-wallets.json',
-        './data/good-wallets.json'
+        // './data/good-wallets.json', // Removed for rollback
       ],
     },
   },

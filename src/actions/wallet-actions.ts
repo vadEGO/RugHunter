@@ -8,14 +8,14 @@ import path from 'path';
 const projectRoot = process.cwd();
 const dataDir = path.join(projectRoot, 'data');
 const ruggedWalletsFilePath = path.join(dataDir, 'rugged-wallets.json');
-const goodWalletsFilePath = path.join(dataDir, 'good-wallets.json');
+// const goodWalletsFilePath = path.join(dataDir, 'good-wallets.json'); // Removed for rollback
 
 async function performDiagnosticLogging() {
   if (process.env.VERCEL) { // Only run diagnostics on Vercel for clarity
     console.log(`[RugHunter Diagnostic] Current working directory (projectRoot): ${projectRoot}`);
     console.log(`[RugHunter Diagnostic] Constructed dataDir: ${dataDir}`);
     console.log(`[RugHunter Diagnostic] Constructed ruggedWalletsFilePath: ${ruggedWalletsFilePath}`);
-    console.log(`[RugHunter Diagnostic] Constructed goodWalletsFilePath: ${goodWalletsFilePath}`);
+    // console.log(`[RugHunter Diagnostic] Constructed goodWalletsFilePath: ${goodWalletsFilePath}`); // Removed for rollback
     try {
       console.log(`[RugHunter Diagnostic] Listing contents of /var/task (projectRoot):`);
       const rootContents = await fs.readdir(projectRoot);
@@ -91,15 +91,14 @@ export async function addWalletServerAction(address: string): Promise<{ success:
   currentWallets.push(normalizedAddress);
   console.log(`[RugHunter] addWalletServerAction (Rugged): Address '${normalizedAddress}' added to in-memory rugged list. Total: ${currentWallets.length}.`);
 
-  // Attempt to remove from good wallets list
-  console.log(`[RugHunter] addWalletServerAction (Rugged): Attempting to remove '${normalizedAddress}' from good wallets list as a precaution.`);
-  const removeFromGoodResult = await removeGoodWalletServerAction(normalizedAddress);
-  if (removeFromGoodResult.success) {
-    console.log(`[RugHunter] addWalletServerAction (Rugged): Successfully ensured '${normalizedAddress}' is not in good wallets list (or it wasn't there).`);
-  } else {
-    console.warn(`[RugHunter] addWalletServerAction (Rugged): Could not ensure removal from good wallets list for '${normalizedAddress}'. Message: ${removeFromGoodResult.message}`);
-    // Continue with adding to rugged list regardless of this outcome.
-  }
+  // Removed logic for interacting with good wallets list during rollback
+  // console.log(`[RugHunter] addWalletServerAction (Rugged): Attempting to remove '${normalizedAddress}' from good wallets list as a precaution.`);
+  // const removeFromGoodResult = await removeGoodWalletServerAction(normalizedAddress);
+  // if (removeFromGoodResult.success) {
+  //   console.log(`[RugHunter] addWalletServerAction (Rugged): Successfully ensured '${normalizedAddress}' is not in good wallets list (or it wasn't there).`);
+  // } else {
+  //   console.warn(`[RugHunter] addWalletServerAction (Rugged): Could not ensure removal from good wallets list for '${normalizedAddress}'. Message: ${removeFromGoodResult.message}`);
+  // }
 
 
   const isOnVercel = !!process.env.VERCEL;
@@ -130,122 +129,7 @@ export async function addWalletServerAction(address: string): Promise<{ success:
   }
 }
 
-
-// --- Good Wallets Actions ---
-
-export async function getGoodWalletsServerAction(): Promise<string[]> {
-  await performDiagnosticLogging();
-  console.log(`[RugHunter] getGoodWalletsServerAction: Attempting to read from ${goodWalletsFilePath}.`);
-  try {
-    const data = await fs.readFile(goodWalletsFilePath, 'utf-8');
-    const wallets = JSON.parse(data);
-    console.log(`[RugHunter] getGoodWalletsServerAction: Successfully parsed ${wallets.length} good wallets.`);
-    return wallets;
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
-      console.warn(`[RugHunter] getGoodWalletsServerAction: Good wallets data file ('${goodWalletsFilePath}') NOT FOUND. Returning an empty list.`);
-      return [];
-    }
-    console.error(`[RugHunter] getGoodWalletsServerAction: Error reading or parsing good wallets file. Path: ${goodWalletsFilePath}. Error:`, error);
-    return [];
-  }
-}
-
-export async function addGoodWalletServerAction(address: string): Promise<{ success: boolean; message: string; updatedWallets?: string[] }> {
-  console.log(`[RugHunter] addGoodWalletServerAction: Adding address '${address}' to good list. Reading existing from ${goodWalletsFilePath}.`);
-  let currentGoodWallets: string[] = [];
-  try {
-    const data = await fs.readFile(goodWalletsFilePath, 'utf-8');
-    currentGoodWallets = JSON.parse(data);
-    console.log(`[RugHunter] addGoodWalletServerAction: Successfully read ${currentGoodWallets.length} existing good wallets.`);
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
-      console.log(`[RugHunter] addGoodWalletServerAction: File ('${goodWalletsFilePath}') NOT FOUND. Will proceed assuming an empty list.`);
-    } else {
-      console.error(`[RugHunter] addGoodWalletServerAction: Error reading file. Path: ${goodWalletsFilePath}. Error:`, error);
-      return { success: false, message: "Server error: Could not read existing good wallet data." };
-    }
-  }
-
-  const normalizedAddress = address.toLowerCase();
-  if (currentGoodWallets.map(w => w.toLowerCase()).includes(normalizedAddress)) {
-    console.log(`[RugHunter] addGoodWalletServerAction: Address '${normalizedAddress}' already in the good list.`);
-    return { success: true, message: "Address already noted as good.", updatedWallets: currentGoodWallets };
-  }
-
-  currentGoodWallets.push(normalizedAddress);
-  console.log(`[RugHunter] addGoodWalletServerAction: Address '${normalizedAddress}' added to in-memory good list. Total: ${currentGoodWallets.length}.`);
-  
-  const isOnVercel = !!process.env.VERCEL;
-  if (isOnVercel) {
-    console.warn(`[RugHunter] addGoodWalletServerAction: Running on Vercel. File system writes to ${goodWalletsFilePath} are ephemeral.`);
-    return {
-      success: true,
-      message: "Address noted as good (session only on Vercel). Changes may not persist.",
-      updatedWallets: currentGoodWallets
-    };
-  }
-
-  try {
-    console.log(`[RugHunter] addGoodWalletServerAction: (Non-Vercel) Attempting to write updated good wallets to: ${goodWalletsFilePath}.`);
-    await fs.mkdir(dataDir, { recursive: true });
-    await fs.writeFile(goodWalletsFilePath, JSON.stringify(currentGoodWallets, null, 2), 'utf-8');
-    const successMessage = "Address added to good list and saved to file.";
-    console.log(`[RugHunter] addGoodWalletServerAction: ${successMessage}`);
-    return { success: true, message: successMessage, updatedWallets: currentGoodWallets };
-  } catch (writeError: any) {
-    console.error(`[RugHunter] addGoodWalletServerAction: (Non-Vercel) Error writing file. Path: ${goodWalletsFilePath}. Error:`, writeError);
-    return { success: false, message: "Server error: Could not save good wallet data." };
-  }
-}
-
-export async function removeGoodWalletServerAction(address: string): Promise<{ success: boolean; message: string; updatedWallets?: string[] }> {
-  console.log(`[RugHunter] removeGoodWalletServerAction: Removing address '${address}' from good list. Reading existing from ${goodWalletsFilePath}.`);
-  let currentGoodWallets: string[] = [];
-  try {
-    const data = await fs.readFile(goodWalletsFilePath, 'utf-8');
-    currentGoodWallets = JSON.parse(data);
-    console.log(`[RugHunter] removeGoodWalletServerAction: Successfully read ${currentGoodWallets.length} existing good wallets.`);
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
-      console.log(`[RugHunter] removeGoodWalletServerAction: File ('${goodWalletsFilePath}') NOT FOUND. Nothing to remove.`);
-      return { success: true, message: "Good wallets file not found, nothing to remove.", updatedWallets: [] };
-    } else {
-      console.error(`[RugHunter] removeGoodWalletServerAction: Error reading file. Path: ${goodWalletsFilePath}. Error:`, error);
-      return { success: false, message: "Server error: Could not read existing good wallet data for removal." };
-    }
-  }
-
-  const normalizedAddress = address.toLowerCase();
-  const initialLength = currentGoodWallets.length;
-  currentGoodWallets = currentGoodWallets.filter(w => w.toLowerCase() !== normalizedAddress);
-
-  if (currentGoodWallets.length === initialLength) {
-    console.log(`[RugHunter] removeGoodWalletServerAction: Address '${normalizedAddress}' not found in good list.`);
-    return { success: true, message: "Address was not in the good list.", updatedWallets: currentGoodWallets };
-  }
-
-  console.log(`[RugHunter] removeGoodWalletServerAction: Address '${normalizedAddress}' removed from in-memory good list. Total: ${currentGoodWallets.length}.`);
-
-  const isOnVercel = !!process.env.VERCEL;
-  if (isOnVercel) {
-    console.warn(`[RugHunter] removeGoodWalletServerAction: Running on Vercel. File system writes to ${goodWalletsFilePath} are ephemeral.`);
-    return {
-      success: true,
-      message: "Address removed from good list (session only on Vercel). Changes may not persist.",
-      updatedWallets: currentGoodWallets
-    };
-  }
-  
-  try {
-    console.log(`[RugHunter] removeGoodWalletServerAction: (Non-Vercel) Attempting to write updated good wallets to: ${goodWalletsFilePath}.`);
-    await fs.mkdir(dataDir, { recursive: true });
-    await fs.writeFile(goodWalletsFilePath, JSON.stringify(currentGoodWallets, null, 2), 'utf-8');
-    const successMessage = "Address removed from good list and file saved.";
-    console.log(`[RugHunter] removeGoodWalletServerAction: ${successMessage}`);
-    return { success: true, message: successMessage, updatedWallets: currentGoodWallets };
-  } catch (writeError: any) {
-    console.error(`[RugHunter] removeGoodWalletServerAction: (Non-Vercel) Error writing file. Path: ${goodWalletsFilePath}. Error:`, writeError);
-    return { success: false, message: "Server error: Could not save good wallet data after removal." };
-  }
-}
+// --- Good Wallets Actions (Removed during rollback) ---
+// export async function getGoodWalletsServerAction(): Promise<string[]> { ... }
+// export async function addGoodWalletServerAction(address: string): Promise<{ success: boolean; message: string; updatedWallets?: string[] }> { ... }
+// export async function removeGoodWalletServerAction(address: string): Promise<{ success: boolean; message: string; updatedWallets?: string[] }> { ... }
